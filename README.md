@@ -1,2 +1,2 @@
 # runASHS
-Simple script to submit ASHS jobs to Slurm
+To see what this script can do, run `python3 submit.py -h`.
