@@ -19,7 +19,9 @@ parser = ap.ArgumentParser(description=desc, formatter_class=ap.ArgumentDefaults
 parser.add_argument('csv', type=str, nargs=1, help='CSV file with subject IDs to be run in the first column (with no header). Include path if necessary.')
 parser.add_argument('-root', type=str, nargs=1, required=False, default=[None], help='Specifies the root directory for ASHS. By default, this information will be pulled from the environment variable "ASHS_ROOT".')
 parser.add_argument('-atlas', type=str, nargs=1, required=False, default=['ashs_atlas_upennpmc_20170810'], help='The name of the ASHS atlas to be used. This is assumed to reside in the top level of the ASHS "root" directory.')
-parser.add_argument('-data', type=str, nargs=1, required=False, default=[None], help='Data directory for subjects. This should contain subdirectories whose names match the subject IDs in the CSV file. Each of these subdirectories must contain *ONE* 3D gradient echo MRI file (MPRAGE_[0-9]*.nii.*) and *ONE* 2D focal fast spin echo MRI file (HighResHippo_[0-9]*.nii.*). This option defaults to the "data" subdirectory in the top level of the ASHS "root" directory.')
+parser.add_argument('-dataDir', type=str, nargs=1, required=False, default=[None], help='Data directory for subjects. This should contain subdirectories whose names match the subject IDs in the CSV file. Each of these subdirectories must contain *ONE* 3D gradient echo MRI file and *ONE* 2D focal fast spin echo MRI file. This option defaults to the "data" subdirectory in the top level of the ASHS "root" directory.')
+parser.add_argument('-prefix3D', type=str, nargs=1, required=False, default=['MPRAGE_'], help='The standard prefix for the 3D gradient echo MRI files. It is assumed that this prefix is followed by one or more numbers, which are then followed by ".nii*". For instance, by default this script will search for files matching the pattern "MPRAGE_[0-9]*.nii*".')
+parser.add_argument('-prefix2D', type=str, nargs=1, required=False, default=['HighResHippo_'], help='The standard prefix for the 2D focal fast spin echo MRI files. It is assumed that this prefix is followed by one or more numbers, which are then followed by ".nii*". For instance, by default this script will search for files matching the pattern "HighResHippo_[0-9]*.nii*".')
 parser.add_argument('-out', type=str, nargs=1, required=False, default=[None], help='Specifies the directory in which the outputs will be stored. More specifically, outputs for each subject will be stored in subdirectories within this directory named by the subject IDs. This option defaults to the "outputs" subdirectory in the top level of the ASHS "root" directory.')
 parser.add_argument('-tidy', action='store_true', default=False, help='If this option is used, ASHS is instructed to clean up files once they are not needed.')
 parser.add_argument('-nProcs', type=int, nargs=1, required=False, default=[1], help='Total number of processors allocated for each ASHS run.')
@@ -70,12 +72,16 @@ ashsAtlasPath = os.path.join(ashsRoot, ashsAtlasName)
 if not os.path.exists(ashsAtlasPath):
     raise IOError('The specified ASHS atlas does not appear to exist.')
 
-if args.data[0] is None:
+if args.dataDir[0] is None:
     dataDir = os.path.join(ashsRoot, 'data')
 else:
-    dataDir = os.path.abspath(args.data[0])
+    dataDir = os.path.abspath(args.dataDir[0])
 if not os.path.exists(dataDir):
-    raise IOError('The specified "data" directory does not appear to exist.')
+    raise IOError('The specified "dataDir" directory does not appear to exist.')
+
+pref3D = args.prefix3D[0]
+
+pref2D = args.prefix2D[0]
 
 if args.out[0] is None:
     parentOutDir = os.path.join(ashsRoot, 'outputs')
@@ -96,8 +102,9 @@ e = '\n'
 for subject in subjects:
 
     # Ensure data directories exist and don't contain ambiguous files
-    gradientFiles = glob(os.path.join(dataDir, subject) + '/MPRAGE_[0-9]*.nii.*')
-    focalFiles = glob(os.path.join(dataDir, subject) + '/HighResHippo_[0-9]*.nii.*')
+    wildcard = '[0-9]*.nii*'
+    gradientFiles = glob(os.path.join(dataDir, subject) + '/' + pref3D + wildcard)
+    focalFiles = glob(os.path.join(dataDir, subject) + '/' + pref2D + wildcard)
 
     if len(gradientFiles) != 1 or len(focalFiles) != 1:
         msg = 'WARNING: ' + \
