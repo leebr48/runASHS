@@ -1,6 +1,6 @@
 #!/bin/python3
 
-# This script was written by Brandon F. Lee (bflee at princeton dot edu).
+# This script was written by Brandon F. Lee (brandon dot lee at columbia dot edu).
 
 # Import necessary modules
 import pandas as pd
